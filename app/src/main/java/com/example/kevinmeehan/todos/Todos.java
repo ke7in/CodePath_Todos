@@ -1,5 +1,6 @@
 package com.example.kevinmeehan.todos;
 
+import android.accounts.Account;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -27,18 +28,19 @@ import java.util.List;
 public class Todos extends AppCompatActivity {
 
     final Context context = this;
-    private ArrayList<String> todoItems;
-    private ArrayAdapter<String> aToDoAdapter;
+    private ArrayList<Todo> todoItems;
+    private ArrayAdapter<Todo> aToDoAdapter;
     private ListView lvItems;
     private Toolbar toolbar;
     private EditText etEditText;
-
+    private TodosDatabaseHelper todoDB;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_todos);
 
+        todoDB = TodosDatabaseHelper.getInstance(context);
         populateArrayItems();
 
         lvItems = (ListView) findViewById(R.id.lvItems);
@@ -54,9 +56,10 @@ public class Todos extends AppCompatActivity {
         lvItems.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                Todo toBeDeleted = todoItems.get(position);
                 todoItems.remove(position);
                 aToDoAdapter.notifyDataSetChanged();
-                writeItems();
+                writeItem(toBeDeleted);
                 return true;
             }
         });
@@ -76,27 +79,29 @@ public class Todos extends AppCompatActivity {
 
     public void populateArrayItems() {
         readItems();
-        aToDoAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, todoItems);
+        aToDoAdapter = new ArrayAdapter<Todo>(this, android.R.layout.simple_list_item_1, todoItems);
     }
 
     private void readItems() {
-        File filesDir = getFilesDir();
+        /*File filesDir = getFilesDir();
         File todoFile = new File(filesDir, "todo.txt");
         try {
             todoItems = new ArrayList<String>(FileUtils.readLines(todoFile));
         } catch (IOException e) {
             todoItems = new ArrayList<String>();
-        }
+        }*/
+        todoItems = todoDB.getAllVisibleTodos();
     }
 
-    private void writeItems() {
-        File filesDir = getFilesDir();
+    private void writeItem(Todo todo) {
+        /*File filesDir = getFilesDir();
         File file = new File(filesDir, "todo.txt");
         try {
             FileUtils.writeLines(file, todoItems);
         } catch (IOException e) {
 
-        }
+        }*/
+        todoDB.updateTodo(todo);
     }
 
     @Override
@@ -123,7 +128,7 @@ public class Todos extends AppCompatActivity {
 
     public void showEditDialogForIndex(long index) {
         final int int_index = (int) (index + 0);
-        String textString = todoItems.get(int_index);
+        final Todo editableTodo = todoItems.get(int_index);
         // get prompts.xml view
         LayoutInflater li = LayoutInflater.from(context);
         View promptsView = li.inflate(R.layout.prompt, null);
@@ -136,7 +141,7 @@ public class Todos extends AppCompatActivity {
 
         final EditText userInput = (EditText) promptsView
                 .findViewById(R.id.editTextDialogUserInput);
-        userInput.setText(textString);
+        userInput.setText(editableTodo.getText());
         userInput.setSelection(userInput.getText().length());
 
         // set dialog interface listeners
@@ -147,9 +152,9 @@ public class Todos extends AppCompatActivity {
         };
         DialogInterface.OnClickListener updateListener = new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-                todoItems.set(int_index, userInput.getText().toString());
+                editableTodo.setText(userInput.getText().toString());
                 aToDoAdapter.notifyDataSetChanged();
-                writeItems();
+                writeItem(editableTodo);
             }
         };
         alertDialogBuilder
@@ -164,8 +169,9 @@ public class Todos extends AppCompatActivity {
         alertDialog.show();
     }
     public void onAddItem(View view) {
-        aToDoAdapter.add(etEditText.getText().toString());
+        Todo newTodo = new Todo(etEditText.getText().toString(), false, false);
         etEditText.setText("");
-        writeItems();
+        aToDoAdapter.add(newTodo);
+        writeItem(newTodo);
     }
 }
