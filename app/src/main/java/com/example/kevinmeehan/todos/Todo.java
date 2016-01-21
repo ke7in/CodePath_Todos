@@ -53,7 +53,8 @@ public class Todo {
     public void setOrder(int order) { this._order = order; }
     @Override
     public String toString() {
-        return "Todo [id=" + _id + ", text=" + _text + ", isDeleted=" + _isDeleted + ", isDone="
-                + _isDone + "]";
+        return _text;
+        //return "Todo [id=" + _id + ", text=" + _text + ", isDeleted=" + _isDeleted + ", isDone="
+        //        + _isDone + "]";
     }
 }
